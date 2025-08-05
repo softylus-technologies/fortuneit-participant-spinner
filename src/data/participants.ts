@@ -1,6 +1,8 @@
 export interface Participant {
   id: number;
   name: string;
+  email?: string;
+  userId?: number;
 }
 
 export const initialParticipants: Participant[] = [

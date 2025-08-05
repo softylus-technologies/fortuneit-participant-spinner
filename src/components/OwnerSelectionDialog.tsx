@@ -6,6 +6,7 @@ import { AdvancedParticleBurst } from './AdvancedParticleBurst';
 import { ParticipantCard } from './ParticipantCard';
 import { OwnerAnnouncement } from './OwnerAnnouncement';
 import { SoundEffects } from './SoundEffects';
+import { type ParticipantData } from '@/services/api';
 
 interface Participant {
   id: number;
@@ -15,9 +16,10 @@ interface Participant {
 interface OwnerSelectionDialogProps {
   participants: Participant[];
   onClose: () => void;
+  winner?: ParticipantData | null;
 }
 
-export const OwnerSelectionDialog = ({ participants, onClose }: OwnerSelectionDialogProps) => {
+export const OwnerSelectionDialog = ({ participants, onClose, winner }: OwnerSelectionDialogProps) => {
   const [selectedOwner, setSelectedOwner] = useState<Participant | null>(null);
   const [status, setStatus] = useState('Initializing Selection...');
   const [showOwnerAnnouncement, setShowOwnerAnnouncement] = useState(false);
@@ -52,7 +54,15 @@ export const OwnerSelectionDialog = ({ participants, onClose }: OwnerSelectionDi
         timeouts.push(setTimeout(resolve, 2000));
       });
       
-      const selectedOwnerParticipant = participants[Math.floor(Math.random() * participants.length)];
+      // Use the winner from API if provided, otherwise select randomly
+      let selectedOwnerParticipant: Participant;
+      if (winner) {
+        // Find the participant that matches the winner
+        const winnerParticipant = participants.find(p => p.userId === winner.user.id);
+        selectedOwnerParticipant = winnerParticipant || participants[Math.floor(Math.random() * participants.length)];
+      } else {
+        selectedOwnerParticipant = participants[Math.floor(Math.random() * participants.length)];
+      }
       const ownerIndex = participants.findIndex(p => p.id === selectedOwnerParticipant.id);
 
       const numSpins = 3;

@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, PlayCircle } from 'lucide-react';
 import { OwnerSelectionDialog } from './OwnerSelectionDialog';
 import { RecentParticipantsFeed } from './RecentParticipantsFeed';
-import { initialParticipants, type Participant } from '@/data/participants';
+import { type Participant } from '@/data/participants';
+import { fetchListingWinner, type ParticipantData } from '@/services/api';
 
 interface RecentParticipant extends Participant {
   timestamp: number;
@@ -13,33 +14,53 @@ export const FortuneItApp = () => {
   const [showOwnerSelection, setShowOwnerSelection] = useState(false);
   const [progress, setProgress] = useState(0);
   const [recentParticipants, setRecentParticipants] = useState<RecentParticipant[]>([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [winner, setWinner] = useState<ParticipantData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const listingId = 199; // This can be made dynamic later
 
-  // Simulate loading progress
+  // Fetch listing data
   useEffect(() => {
-    if (showOwnerSelection) return;
-    
-    const progressInterval = setInterval(() => {
-      setProgress(prev => {
-        const newProgress = prev + Math.random() * 5;
-        if (newProgress >= 100) {
-          clearInterval(progressInterval);
+    const loadListingData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetchListingWinner(listingId);
+        
+        // Convert API data to Participant format
+        const convertedParticipants: Participant[] = response.data.map(p => ({
+          id: p.id,
+          name: `${p.user.first_name} ${p.user.last_name}`,
+          email: p.user.email,
+          userId: p.user.id
+        }));
+        
+        setParticipants(convertedParticipants);
+        setWinner(response.winner);
+        setProgress(response.purchase_percentage);
+        
+        // Show owner selection when progress reaches 100%
+        if (response.purchase_percentage >= 100) {
           setTimeout(() => setShowOwnerSelection(true), 1500);
-          return 100;
         }
-        return newProgress;
-      });
-    }, 400);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load data');
+        console.error('Error loading listing data:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    return () => clearInterval(progressInterval);
-  }, [showOwnerSelection]);
+    loadListingData();
+  }, []);
 
-  // Simulate new participants joining
+  // Simulate new participants joining from real data
   useEffect(() => {
-    if (showOwnerSelection) return;
+    if (showOwnerSelection || participants.length === 0) return;
     
     const participantInterval = setInterval(() => {
-      const randomParticipant = initialParticipants[
-        Math.floor(Math.random() * initialParticipants.length)
+      const randomParticipant = participants[
+        Math.floor(Math.random() * participants.length)
       ];
       const newEntry: RecentParticipant = { 
         ...randomParticipant, 
@@ -49,12 +70,41 @@ export const FortuneItApp = () => {
     }, 2500);
 
     return () => clearInterval(participantInterval);
-  }, [showOwnerSelection]);
+  }, [showOwnerSelection, participants]);
 
   const formattedProgress = useMemo(() => {
     const p = Math.min(100, progress);
     return p.toFixed(2);
   }, [progress]);
+
+  if (isLoading) {
+    return (
+      <div className="w-full min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          <p className="text-muted-foreground">Loading participants...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 max-w-md text-center">
+          <div className="text-4xl">⚠️</div>
+          <h2 className="text-xl font-bold text-destructive">Error Loading Data</h2>
+          <p className="text-muted-foreground">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full min-h-screen bg-background text-foreground">
@@ -177,11 +227,12 @@ export const FortuneItApp = () => {
       <AnimatePresence>
         {showOwnerSelection && (
           <OwnerSelectionDialog
-            participants={initialParticipants}
+            participants={participants}
             onClose={() => {
               setShowOwnerSelection(false);
-              setProgress(0);
+              // Don't reset progress since it comes from API
             }}
+            winner={winner}
           />
         )}
       </AnimatePresence>
