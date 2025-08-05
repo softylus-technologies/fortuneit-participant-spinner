@@ -2,9 +2,10 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence, animate } from 'framer-motion';
 import { useWindowSize } from '@/hooks/useWindowSize';
 import { calculateCardLayout } from '@/utils/layoutCalculator';
-import { ParticleBurst } from './ParticleBurst';
+import { AdvancedParticleBurst } from './AdvancedParticleBurst';
 import { ParticipantCard } from './ParticipantCard';
 import { OwnerAnnouncement } from './OwnerAnnouncement';
+import { SoundEffects } from './SoundEffects';
 
 interface Participant {
   id: number;
@@ -23,6 +24,9 @@ export const OwnerSelectionDialog = ({ participants, onClose }: OwnerSelectionDi
   const [eliminatedCards, setEliminatedCards] = useState(new Set<number>());
   const [ownerRevealed, setOwnerRevealed] = useState(false);
   const [particleOrigin, setParticleOrigin] = useState<{ x: number; y: number } | null>(null);
+  const [playWinSound, setPlayWinSound] = useState(false);
+  const [playSelectionSound, setPlaySelectionSound] = useState(false);
+  const [playEliminationSound, setPlayEliminationSound] = useState(false);
   
   const { width, height } = useWindowSize();
   const spotlightRef = useRef<HTMLDivElement>(null);
@@ -72,10 +76,19 @@ export const OwnerSelectionDialog = ({ participants, onClose }: OwnerSelectionDi
       const nonOwners = participants.filter(p => p.id !== selectedOwnerParticipant.id);
       const eliminationDuration = animationDuration * 0.8;
       
+      // Start selection sound
+      setPlaySelectionSound(true);
+      timeouts.push(setTimeout(() => setPlaySelectionSound(false), 1000));
+      
       nonOwners.forEach((loser, i) => {
         const delay = (i / nonOwners.length) * eliminationDuration;
         timeouts.push(setTimeout(() => {
           setEliminatedCards(prev => new Set(prev).add(loser.id));
+          // Play elimination sound for each eliminated participant
+          if (i === 0) {
+            setPlayEliminationSound(true);
+            setTimeout(() => setPlayEliminationSound(false), 500);
+          }
         }, delay));
       });
 
@@ -108,6 +121,9 @@ export const OwnerSelectionDialog = ({ participants, onClose }: OwnerSelectionDi
 
       setStatus(`🎉 The new owner is ${selectedOwnerParticipant.name}! 🎉`);
       
+      // Play epic win sound
+      setPlayWinSound(true);
+      
       await new Promise(resolve => {
         timeouts.push(setTimeout(resolve, 2000));
       });
@@ -126,14 +142,65 @@ export const OwnerSelectionDialog = ({ participants, onClose }: OwnerSelectionDi
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-40 font-sans overflow-hidden">
       <AnimatePresence>
         {selectedOwner && (
-          <ParticleBurst width={width} height={height} origin={particleOrigin} />
+          <AdvancedParticleBurst 
+            width={width} 
+            height={height} 
+            origin={particleOrigin} 
+            intensity="epic"
+          />
         )}
       </AnimatePresence>
+      
+      {/* Sound Effects */}
+      <SoundEffects
+        playWinSound={playWinSound}
+        playSelectionSound={playSelectionSound}
+        playEliminationSound={playEliminationSound}
+        onSoundComplete={() => {
+          setPlayWinSound(false);
+          setPlaySelectionSound(false);
+          setPlayEliminationSound(false);
+        }}
+      />
 
+      {/* Enhanced spotlight with multiple layers */}
       <motion.div 
         ref={spotlightRef} 
-        className="absolute w-40 h-40 rounded-full bg-primary/20 blur-3xl" 
-        style={{ x: -200, y: -200 }} 
+        className="absolute w-60 h-60 rounded-full opacity-40 blur-3xl"
+        style={{ 
+          x: -200, 
+          y: -200,
+          background: 'radial-gradient(circle, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.3) 50%, transparent 100%)'
+        }}
+        animate={{
+          scale: [1, 1.2, 1],
+          opacity: [0.4, 0.7, 0.4]
+        }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          ease: 'easeInOut' as const
+        }}
+      />
+      
+      {/* Secondary spotlight ring */}
+      <motion.div 
+        ref={spotlightRef} 
+        className="absolute w-80 h-80 rounded-full opacity-20 blur-2xl"
+        style={{ 
+          x: -200, 
+          y: -200,
+          background: 'radial-gradient(circle, transparent 40%, hsl(var(--primary) / 0.2) 50%, transparent 80%)'
+        }}
+        animate={{
+          scale: [1.2, 1, 1.2],
+          rotate: [0, 360]
+        }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: 'linear' as const
+        }}
       />
 
       <div className="w-full h-full relative">
@@ -172,13 +239,42 @@ export const OwnerSelectionDialog = ({ participants, onClose }: OwnerSelectionDi
       </div>
       
       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-center">
-        <motion.p 
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }} 
-          className="text-xl text-foreground tracking-wider"
+        <motion.div
+          className="relative"
+          animate={{
+            scale: [1, 1.05, 1],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: 'easeInOut' as const
+          }}
         >
-          {status}
-        </motion.p>
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            className="text-xl text-foreground tracking-wider font-semibold relative z-10"
+            style={{
+              textShadow: '0 0 20px hsl(var(--primary) / 0.5)'
+            }}
+          >
+            {status}
+          </motion.p>
+          
+          {/* Background glow effect */}
+          <motion.div
+            className="absolute inset-0 rounded-lg bg-primary/10 blur-xl"
+            animate={{
+              opacity: [0.3, 0.6, 0.3],
+              scale: [0.8, 1.2, 0.8]
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: 'easeInOut' as const
+            }}
+          />
+        </motion.div>
       </div>
     
       <AnimatePresence>

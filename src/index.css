@@ -46,13 +46,26 @@
     --gradient-gold: linear-gradient(135deg, hsl(var(--fortune-gold)), hsl(var(--fortune-gold-light)));
     --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(var(--muted)));
     
-    /* Effects */
+    /* Advanced Effects */
     --glow-gold: 0 0 40px hsl(var(--fortune-gold) / 0.3);
+    --glow-neon: 0 0 20px hsl(var(--fortune-gold) / 0.5), 0 0 40px hsl(var(--fortune-gold) / 0.3), 0 0 60px hsl(var(--fortune-gold) / 0.2);
+    --glow-cosmic: 0 0 30px hsl(270 75% 60% / 0.4), 0 0 60px hsl(270 75% 60% / 0.2);
     --shadow-premium: 0 20px 40px -10px hsl(var(--fortune-dark) / 0.8);
+    --shadow-floating: 0 25px 50px -12px hsl(var(--fortune-dark) / 0.7), 0 0 0 1px hsl(var(--fortune-gold) / 0.1);
+    --shadow-epic: 0 30px 60px -15px hsl(var(--fortune-dark) / 0.9), 0 0 80px hsl(var(--fortune-gold) / 0.2);
+    
+    /* Advanced Gradients */
+    --gradient-rainbow: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57, #ff9ff3);
+    --gradient-cosmic: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-sunset: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    --gradient-aurora: linear-gradient(135deg, #00c9ff 0%, #92fe9d 50%, #ff9a9e 100%);
+    --gradient-holographic: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
     
     /* Animations */
     --animation-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --animation-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --animation-elastic: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --animation-dramatic: all 1.2s cubic-bezier(0.23, 1, 0.320, 1);
 
     --sidebar-background: 220 15% 11%;
 
@@ -139,5 +152,80 @@
   
   .bounce-transition {
     transition: var(--animation-bounce);
+  }
+  
+  .neon-glow {
+    box-shadow: var(--glow-neon);
+  }
+  
+  .cosmic-glow {
+    box-shadow: var(--glow-cosmic);
+  }
+  
+  .floating-shadow {
+    box-shadow: var(--shadow-floating);
+  }
+  
+  .epic-shadow {
+    box-shadow: var(--shadow-epic);
+  }
+  
+  .elastic-transition {
+    transition: var(--animation-elastic);
+  }
+  
+  .dramatic-transition {
+    transition: var(--animation-dramatic);
+  }
+  
+  .gradient-rainbow {
+    background: var(--gradient-rainbow);
+  }
+  
+  .gradient-cosmic {
+    background: var(--gradient-cosmic);
+  }
+  
+  .gradient-aurora {
+    background: var(--gradient-aurora);
+  }
+  
+  .gradient-holographic {
+    background: var(--gradient-holographic);
+    animation: holographic-shine 3s ease-in-out infinite;
+  }
+  
+  @keyframes holographic-shine {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite alternate;
+  }
+  
+  @keyframes pulse-glow {
+    from { box-shadow: var(--glow-gold); }
+    to { box-shadow: var(--glow-neon); }
+  }
+  
+  .floating-animation {
+    animation: floating 6s ease-in-out infinite;
+  }
+  
+  @keyframes floating {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+  
+  .shimmer {
+    background: linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.1) 50%, transparent 60%);
+    background-size: 200% 200%;
+    animation: shimmer 2s linear infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
   }
 }
